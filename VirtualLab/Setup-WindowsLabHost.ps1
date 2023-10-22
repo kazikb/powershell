@@ -155,7 +155,7 @@ if ($Platform -eq 'Kvm') {
 
         Write-ConsoleMessage -Installer $InstallerPath
         Start-Process -FilePath "$CDRomDrive\cert\VBoxCertUtil.exe" -ArgumentList "add-trusted-publisher vbox*.cer","--root vbox*.cer" -Wait
-        Start-Process -FilePath $InstallerPath -ArgumentList "/with_wddm","/S" -Wait
+        Start-Process -FilePath $InstallerPath -ArgumentList "/S" -Wait
 
     } else {
         Write-Error "Missing installer file: $InstallerPath"
