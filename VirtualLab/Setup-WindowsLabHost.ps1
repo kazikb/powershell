@@ -188,11 +188,11 @@ $SoftwareToInstall.Add([PSCustomObject]@{
 $Resp = Invoke-WebRequest "https://www.wireshark.org/"
 $WiresharkReleaseVersion = [regex]::Match($Resp.RawContent, "Stable Release: \d+\.\d+\.\d+").value.split(" ")[-1]
 
-$FileName = [regex]::Match($Resp.RawContent,"nmap-\d+\.\d+-setup.exe").value
+$FileName = "Wireshark-$WiresharkReleaseVersion-x64.exe"
 $SoftwareToInstall.Add([PSCustomObject]@{
     Name           = "Wireshark"
-    DownloadLink   = [regex]::Match($Resp.RawContent, "https:\/\/.+\/Wireshark-win64-$WiresharkReleaseVersion.exe").value
-    InstallerPath  = "$SetupLocation\Wireshark-win64-$WiresharkReleaseVersion.exe"
+    DownloadLink   = [regex]::Match($Resp.RawContent, "https:\/\/.+\/win64/$FileName").value
+    InstallerPath  = "$SetupLocation\$FileName"
     ArgumentList   = @("/S","/desktopicon=yes","/quicklaunchicon=yes")
     Msiexec        = $false
 })
