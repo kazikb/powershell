@@ -73,7 +73,9 @@ param(
     [ValidateSet("Kvm","VirtualBox")]
     [string]$Platform,
 
-    [Switch]$ClearInboundFwRules
+    [Switch]$ClearInboundFwRules,
+
+	[Switch]$SilentInstall
 )
 
 $SetupLocation = "C:\Inst"
@@ -121,14 +123,14 @@ if ($Platform -eq 'Kvm') {
     Write-ConsoleMessage -Message "Setup Virtio-Win-Guest-Tools"
 
     # Redirect to actual stable version
-    $Resp = Invoke-WebRequest -Method Head -Uri "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio"
+    $Resp = Invoke-WebRequest -Method Head -Uri "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio" -UseBasicParsing
     if ($Resp.BaseResponse.ResponseUri.AbsoluteUri) {
         $FileName = "virtio-win-guest-tools.exe"
         $InstallerPath = "$SetupLocation\$FileName"
         $DownloadLink = $Resp.BaseResponse.ResponseUri.AbsoluteUri + $FileName
 
         Write-ConsoleMessage -Url $DownloadLink -Installer $InstallerPath
-        Invoke-WebRequest -Uri $DownloadLink -OutFile $InstallerPath
+        Invoke-WebRequest -Uri $DownloadLink -OutFile $InstallerPath -UseBasicParsing
 
         if (Test-Path $InstallerPath) {
             Write-ConsoleMessage -Installer $InstallerPath
@@ -163,17 +165,19 @@ if ($Platform -eq 'Kvm') {
 }
 
 #region Nmap & Npcap
-$Resp = Invoke-WebRequest "https://nmap.org/download.html"
+if (-not($SilentInstall)) {
+	$Resp = Invoke-WebRequest "https://nmap.org/download.html" -UseBasicParsing
+	$FileName = [regex]::Match($Resp.RawContent,"npcap-\d+\.\d+.exe").value
+	$SoftwareToInstall.Add([PSCustomObject]@{
+		Name           = "Npcap"
+		DownloadLink   = "https://npcap.com/dist/$FileName"
+		InstallerPath  = "$SetupLocation\$FileName"
+		ArgumentList   = @()
+		Msiexec        = $false
+	})
+}
 
-$FileName = [regex]::Match($Resp.RawContent,"npcap-\d+\.\d+.exe").value
-$SoftwareToInstall.Add([PSCustomObject]@{
-    Name           = "Npcap"
-    DownloadLink   = "https://npcap.com/dist/$FileName"
-    InstallerPath  = "$SetupLocation\$FileName"
-    ArgumentList   = @()
-    Msiexec        = $false
-})
-
+$Resp = Invoke-WebRequest "https://nmap.org/download.html" -UseBasicParsing
 $FileName = [regex]::Match($Resp.RawContent,"nmap-\d+\.\d+-setup.exe").value
 $SoftwareToInstall.Add([PSCustomObject]@{
     Name           = "Nmap"
@@ -185,14 +189,14 @@ $SoftwareToInstall.Add([PSCustomObject]@{
 #endregion Nmap & Npcap
 
 #region Wireshark
-$Resp = Invoke-WebRequest "https://www.wireshark.org/"
+$Resp = Invoke-WebRequest "https://www.wireshark.org/" -UseBasicParsing
 $WiresharkReleaseVersion = [regex]::Match($Resp.RawContent, "Stable Release: \d+\.\d+\.\d+").value.split(" ")[-1]
 
-$FileName = [regex]::Match($Resp.RawContent,"nmap-\d+\.\d+-setup.exe").value
+$FileName = "Wireshark-$WiresharkReleaseVersion-x64.exe"
 $SoftwareToInstall.Add([PSCustomObject]@{
     Name           = "Wireshark"
-    DownloadLink   = [regex]::Match($Resp.RawContent, "https:\/\/.+\/Wireshark-win64-$WiresharkReleaseVersion.exe").value
-    InstallerPath  = "$SetupLocation\Wireshark-win64-$WiresharkReleaseVersion.exe"
+    DownloadLink   = [regex]::Match($Resp.RawContent, "https:\/\/.+\/win64/$FileName").value
+    InstallerPath  = "$SetupLocation\$FileName"
     ArgumentList   = @("/S","/desktopicon=yes","/quicklaunchicon=yes")
     Msiexec        = $false
 })
@@ -286,7 +290,7 @@ $SoftwareToInstall.Add([PSCustomObject]@{
 foreach ($Software in $SoftwareToInstall) {
     Write-ConsoleMessage -Message "Setup $($Software.Name)"
     Write-ConsoleMessage -Url $Software.DownloadLink -Installer $Software.InstallerPath
-    Invoke-WebRequest -Uri $Software.DownloadLink -OutFile $Software.InstallerPath
+    Invoke-WebRequest -Uri $Software.DownloadLink -OutFile $Software.InstallerPath -UseBasicParsing
 
     if (Test-path $Software.InstallerPath) {
 
@@ -315,7 +319,7 @@ $ZipExtractPath = "$SetupLocation\HxDSetup"
 $InstallerPath = "$ZipExtractPath\HxDSetup.exe"
 
 Write-ConsoleMessage -Url $DownloadLink -Installer $ZipPath
-Invoke-WebRequest -Uri $DownloadLink -OutFile $ZipPath
+Invoke-WebRequest -Uri $DownloadLink -OutFile $ZipPath -UseBasicParsing
 
 Write-ConsoleMessage -Message "Extract archive $ZipPath to $ZipExtractPath"
 if (Test-Path $ZipExtractPath) { Remove-Item $ZipExtractPath -Recurse -Force }
@@ -338,7 +342,7 @@ $ZipExtractPath = "$SetupLocation\SysinternalsSuite"
 $SysinternalsPath = "C:\Program Files\SysinternalsSuite"
 
 Write-ConsoleMessage -Url $DownloadLink -Installer $ZipPath
-Invoke-WebRequest -Uri $DownloadLink -OutFile $ZipPath
+Invoke-WebRequest -Uri $DownloadLink -OutFile $ZipPath -UseBasicParsing
 
 Write-ConsoleMessage -Message "Extract archive $ZipPath to $ZipExtractPath"
 if (-not (Test-Path $ZipExtractPath)) { New-Item $ZipExtractPath -ItemType Directory }
