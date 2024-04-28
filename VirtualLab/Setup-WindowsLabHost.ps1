@@ -39,6 +39,10 @@
 
     Clear all inbound firewall rules except "Core Networking - Dynamic Host Configuration Protocol (DHCP-In)".
 
+.PARAMETER SilentInstall
+
+    Do not install npcap driver which requires user interaction.
+
 .EXAMPLE
 
     PS C:\> Invoke-WebRequest -Uri https://raw.githubusercontent.com/kazikb/powershell/main/VirtualLab/Setup-WindowsLabHost.ps1 -OutFile "$env:USERPROFILE\Desktop\Setup-WindowsLabHost.ps1"
