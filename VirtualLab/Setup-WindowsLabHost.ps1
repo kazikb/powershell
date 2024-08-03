@@ -170,7 +170,7 @@ if ($Platform -eq 'Kvm') {
 
 #region Nmap & Npcap
 if (-not($SilentInstall)) {
-	$Resp = Invoke-WebRequest "https://nmap.org/download.html" -UseBasicParsing
+	$Resp = Invoke-WebRequest "https://npcap.com/" -UseBasicParsing
 	$FileName = [regex]::Match($Resp.RawContent,"npcap-\d+\.\d+.exe").value
 	$SoftwareToInstall.Add([PSCustomObject]@{
 		Name           = "Npcap"
